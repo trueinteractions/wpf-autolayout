@@ -11,7 +11,7 @@ b.Content = "Button Title";
 panel.Children.Add(b);
 
 // Assign the left (X) value to the left panel.
-// panel.AddLayoutConstraint(b,'Left',panel,'Left',0,0);
+// panel.AddLayoutConstraint(b,"Left",panel,"Left",0,0);
 
 // Vertically and horizontally center:
 // panel.AddLayoutConstraint(button, "Middle", "=", panel, "Middle", 1, 0);
