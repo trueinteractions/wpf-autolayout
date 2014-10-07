@@ -198,9 +198,9 @@ namespace AutoLayoutPanel
             foreach (UIElement child in InternalChildren)
             {
                 SetValue(FindClVariableByUIElementAndProperty(child, "Width"), 
-                    child.DesiredSize.Width, ClStrength.Required);
+                    child.DesiredSize.Width, ClStrength.Strong);
                 SetValue(FindClVariableByUIElementAndProperty(child, "Height"),
-                    child.DesiredSize.Height, ClStrength.Required);
+                    child.DesiredSize.Height, ClStrength.Strong);
             }
 
             solver.Resolve();
@@ -208,143 +208,13 @@ namespace AutoLayoutPanel
             foreach (UIElement child in InternalChildren)
             {
                 String Id = GetId(child);
-                child.Arrange(new Rect(new Point(((ClVariable)ControlVariables[Id + "_X"]).Value,
-                                ((ClVariable)ControlVariables[Id + "_Y"]).Value),
+                child.Arrange(new Rect(
+                                new Point(((ClVariable)ControlVariables[Id + "_X"]).Value,
+                                    ((ClVariable)ControlVariables[Id + "_Y"]).Value),
                                 new Size(((ClVariable)ControlVariables[Id + "_Width"]).Value,
-                                ((ClVariable)ControlVariables[Id + "_Height"]).Value))
-                );
+                                    ((ClVariable)ControlVariables[Id + "_Height"]).Value)));
             }
             return finalSize;
         }
     }
 }
-
-
-
-
-//Console.WriteLine("Panel width is: " + finalSize.Width);
-//Console.WriteLine("Panel height is: " + finalSize.Height);
-//Console.WriteLine(solver.GetDebugInfo());
-
-/*
-    Cl.Plus(
-        constant,
-        Cl.Times(
-            multiplier,
-            target.propertySecondVariable
-        )
-    )*/
-
-/*
-target.propertyFirstVariable,
-Cl.Plus(constant,
-    Cl.Times(multiplier, target.propertySecondVariable)
-),
-ClStrength.Required);*/
-/* 
- Controls.Add(this, (Guid.NewGuid().ToString()));
- ClVariable Top = new ClVariable(GetId(this) + "_Top", 0);
- ClVariable Middle = new ClVariable(GetId(this) + "_Middle", 0);
- ClVariable Bottom = new ClVariable(GetId(this) + "_Bottom", 0);
- ClVariable Left = new ClVariable(GetId(this) + "_Left", 0);
- ClVariable Center = new ClVariable(GetId(this) + "_Center", 0);
- ClVariable Right = new ClVariable(GetId(this) + "_Right",0);
- ClVariable Width = new ClVariable(GetId(this) + "_Width",0);
- ClVariable Height = new ClVariable(GetId(this) + "_Height",0);
- ClVariable X = new ClVariable(GetId(this) + "_X",0);
- ClVariable Y = new ClVariable(GetId(this) + "_Y",0);
-
- ControlVariables.Add(GetId(this) + "_X", X);
- ControlVariables.Add(GetId(this) + "_Y", Y);
- ControlVariables.Add(GetId(this) + "_Width", Width);
- ControlVariables.Add(GetId(this) + "_Height", Height);
- ControlVariables.Add(GetId(this) + "_Top", Top);
- ControlVariables.Add(GetId(this) + "_Middle", Middle);
- ControlVariables.Add(GetId(this) + "_Bottom", Bottom);
- ControlVariables.Add(GetId(this) + "_Left", Left);
- ControlVariables.Add(GetId(this) + "_Center", Center);
- ControlVariables.Add(GetId(this) + "_Right", Right);*/
-
-//solver.AddConstraint(new ClLinearEquation(Width, new ClLinearExpression(1), ClStrength.Required));
-//solver.AddConstraint(new ClLinearEquation(Height, new ClLinearExpression(1), ClStrength.Required));
-// Y = Top
-//solver.AddConstraint(new ClLinearEquation(clY, new ClLinearExpression(clTop), ClStrength.Strong));
-// X = Left
-//solver.AddConstraint(new ClLinearEquation(clX, new ClLinearExpression(clLeft), ClStrength.Strong));
-// Height = Parent.Height - (Y + Bottom)
-//if(solver.AddConstraintNoException(new ClLinearEquation(
-//    new ClLinearExpression(pHeight).Minus(new ClLinearExpression(clY).Plus(clBottom)),
-//    ClStrength.Strong)))
-//{
-//    Console.WriteLine("failed Height = Parent.Height - (Y + Bottom): \n" + solver.GetDebugInfo());
-//}
-// Y = Parent.Height - (Height + Bottom)
-/*if(solver.AddConstraintNoException(new ClLinearEquation(
-    clY,
-    new ClLinearExpression(pHeight).Minus(new ClLinearExpression(clHeight).Plus(clBottom)),
-    ClStrength.Strong)))
-{
-    Console.WriteLine("failed Y = Parent.Height - (Height + Bottom): \n" + solver.GetDebugInfo());
-}
-            
-if ()
-{
-    Console.WriteLine("failed Right = Parent.Width - (X + Width): \n" + solver.GetDebugInfo());
-}*/
-// Width = Parent.Width - (X + Right)
-//if(solver.AddConstraintNoException(new ClLinearEquation(
-//    Cl.Minus(new ClLinearExpression(pWidth), Cl.Plus(clX, new ClLinearExpression(clRight))),
-//    clWidth,
-//    ClStrength.Strong)))
-//{
-//    Console.WriteLine("failed Width = Parent.Width - (X + Right): \n" + solver.GetDebugInfo());
-//}
-// X = Parent.Width - (Width + Right)
-//if (solver.AddConstraintNoException(new ClLinearEquation(
-//    clX,
-//    Cl.Minus(new ClLinearExpression(pWidth), Cl.Plus(clWidth, new ClLinearExpression(clRight))),
-//    ClStrength.Strong)))
-//{
-//    Console.WriteLine("failed X = Parent.Width - (Width + Right): \n" + solver.GetDebugInfo());
-//}
-
-
-// X = (parent.Width - (Width + Right))
-/*solver.AddConstraint(new ClLinearEquation(clX, 
-    Cl.Minus(
-        new ClLinearExpression(pWidth),
-        Cl.Plus(
-            new ClLinearExpression(clWidth),
-            new ClLinearExpression(clRight)
-        )
-    ), 
-    ClStrength.Strong));*/
-// Y = (parent.Height - (Bottom + Height))
-/*solver.AddConstraint(new ClLinearEquation(
-    clY,
-    Cl.Minus(
-        new ClLinearExpression(pHeight),
-        Cl.Plus(
-            new ClLinearExpression(clBottom),
-            new ClLinearExpression(clHeight)
-        )
-    ),
-    ClStrength.Strong
-));*/
-// Height = Bottom - Top
-//solver.AddConstraint(new ClLinearEquation(clHeight, Cl.Minus(new ClLinearExpression(clBottom), new ClLinearExpression(clTop)), ClStrength.Strong));
-// Width = Right - Left
-//solver.AddConstraint(new ClLinearEquation(clWidth, Cl.Minus(new ClLinearExpression(clRight), new ClLinearExpression(clLeft)), ClStrength.Strong));
-// Center = (parent.Width/2 - Width/2)dth
-/*solver.AddConstraint(new ClLinearEquation(
-    clCenter, 
-    Cl.Minus(
-        Cl.Divide(new ClLinearExpression(pWidth),new ClLinearExpression(2)),
-        Cl.Divide(new ClLinearExpression(clWidth),new ClLinearExpression(2))
-    ),
-    ClStrength.Strong
-));*/
-
-// Intrinsic size as weak.
-//solver.AddConstraint(new ClLinearEquation(clWidth, new ClLinearExpression(1), ClStrength.Required));
-//solver.AddConstraint(new ClLinearEquation(clHeight, new ClLinearExpression(1), ClStrength.Required));
