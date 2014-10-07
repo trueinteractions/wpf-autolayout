@@ -1,6 +1,6 @@
 <h1>wpf-autolayout</h1>
 
-An implementation of Cassowary contraint based system.  It contains a Windows WPF control called AutoLayoutPanel that allows you to add controls and define their layout in y=m*x + c model. Where y and x are either the Left, Center, Right, Top, Middle, Bottom, Width and Height.
+An implementation of Cassowary contraint based system.  It contains a Windows WPF control called AutoLayoutPanel that allows you to add controls and define their layout in y=m*x + c model. Where y and x are either the Left, Center, Right, Top, Middle, Bottom, Width and Height property of the control listed previously.
 
 Example usage:
 ```C#
@@ -22,3 +22,15 @@ panel.Children.Add(b);
 // panel.AddLayoutConstraint(button, "Left", "=", panel, "Left", 0, 30);
 // panel.AddLayoutConstraint(button, "Right", "=", panel, "Right", 0, -30);
 ```
+
+API:
+
+Dead simple, AutoLayoutPanel inherits from System.Windows.Controls.Panel and adds two new methods:
+
+``int AutoLayoutPanel.AddLayoutConstraint(UIElement firstProperty, String firstPropertyName, String equality, UIElement secondProperty, String secondPropertyName, double multiplier, double constant);``
+
+Equality can be "=", "<", or ">"
+
+The returned integer is an ID that can be passed back into RemoveLayoutConstraint to remove the constraint.
+
+``void AutoLayoutPanel.RemoveLayoutConstraint(int constraintId);``
