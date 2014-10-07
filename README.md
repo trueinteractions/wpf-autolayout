@@ -17,8 +17,8 @@ panel.Children.Add(b);
 // panel.AddLayoutConstraint(button, "Middle", "=", panel, "Middle", 1, 0);
 // panel.AddLayoutConstraint(button, "Center", "=", panel, "Center", 1, 0);
 
-// Set the width through setting the left and right values, the button is fixed
-// to 30 points (logical pixels) on each side of the button.
+// Set the width by defining where the left and right values of the button
+// should be set.  The button will always have 30 pixel margin on left and right sides.
 // panel.AddLayoutConstraint(button, "Left", "=", panel, "Left", 0, 30);
 // panel.AddLayoutConstraint(button, "Right", "=", panel, "Right", 0, -30);
 ```
