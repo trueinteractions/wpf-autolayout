@@ -2,7 +2,14 @@
 
 An implementation of Cassowary contraint based system.  It contains a Windows WPF control called AutoLayoutPanel that allows you to add controls and define their layout in y=m*x + c model. Where y and x are either the Left, Center, Right, Top, Middle, Bottom, Width and Height property of the control listed previously.
 
-Example usage:
+<h2>Features</h2>
+
+* Ability to express nearly any layout by describing layout in terms of relationships with math.
+* Support for RTL, LTR auto layouts for localization and cross-lingual interfaces.
+* Incremental solving that's signficantly faster than resolving on each render loop.
+
+<h2>API & Example</h2>
+
 ```C#
 AutoLayoutPanel panel = new AutoLayoutPanel();
 Window.Content = panel;
@@ -23,7 +30,7 @@ panel.Children.Add(b);
 // panel.AddLayoutConstraint(button, "Right", "=", panel, "Right", 0, -30);
 ```
 
-API:
+<h3>API</H3>
 
 Dead simple, AutoLayoutPanel inherits from System.Windows.Controls.Panel and adds two new methods:
 
