@@ -1,0 +1,82 @@
+{
+	'targets': [
+		{
+			'target_name':'autolayout',
+			'type':'static_library',
+			'sources': [
+				'AutoLayoutPanel.cpp',
+				'ClAbstractVariable.cc',
+				'ClC.cc',
+				'ClConstraint.cc',
+				'ClDummyVariable.cc',
+				'ClFDBinaryOneWayConstraint.cc',
+				'ClFDConnectorVariable.cc',
+				#'ClFDSolver.cc',
+				'ClFDVariable.cc',
+				'ClFloatVariable.cc',
+				'ClLinearExpression.cc',
+				'ClSimplexSolver.cc',
+				'ClSlackVariable.cc',
+				'ClSolver.cc',
+				'ClStrength.cc',
+				'ClSymbolicWeight.cc',
+				'ClTableau.cc',
+				'ClVariable.cc',
+				'include/Cassowary.h',
+				'include/Cl.h',
+				'include/ClAbstractVariable.h',
+				'include/ClC.h',
+				'include/ClConstraint.h',
+				'include/ClConstraintHash.h',
+				'include/ClDummyVariable.h',
+				'include/ClEditConstraint.h',
+				'include/ClEditOrStayConstraint.h',
+				'include/ClErrors.h',
+				'include/ClFDBinaryOneWayConstraint.h',
+				'include/ClFDConnectorVariable.h',
+				'include/ClFDConstraint.h',
+				'include/ClFDSolver.h',
+				'include/ClFDVariable.h',
+				'include/ClFloatVariable.h',
+				'include/ClLinearConstraint.h',
+				'include/ClLinearEquation.h',
+				'include/ClLinearExpression.h',
+				'include/ClLinearExpression_fwd.h',
+				'include/ClLinearInequality.h',
+				'include/ClMap.h',
+				'include/ClObjectiveVariable.h',
+				'include/ClPoint.h',
+				'include/ClReader.h',
+				'include/ClSet.h',
+				'include/ClSimplexSolver.h',
+				'include/ClSlackVariable.h',
+				'include/ClSolver.h',
+				'include/ClStayConstraint.h',
+				'include/ClStrength.h',
+				'include/ClSymbolicWeight.h',
+				'include/ClTableau.h',
+				'include/ClTimedSimplexSolver.h',
+				'include/ClTypedefs.h',
+				'include/ClVariable.h',
+				'include/auto_ptr.h',
+				'include/cl_auto_ptr.h',
+				'include/config-inline.h',
+				# config.h.in
+				'include/debug.h',
+				'include/timer.h'
+			],
+			'include_dirs':[
+				'include/'
+			],
+	      	'msvs_settings': {
+	        	'VCLinkerTool': {
+	          		'AdditionalOptions': [ '/CLRTHREADATTRIBUTE:STA' ],
+	        	},
+	        	'VCCLCompilerTool': {
+	          		'ExceptionHandling': 0,
+	          		'AdditionalOptions': [ '/CLR', '/EHa' ],
+	        	},
+	      	}
+		}
+	]	
+}

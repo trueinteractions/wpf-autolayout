@@ -1,0 +1,81 @@
+/* Documentation for local preprocessor symbols defined by configure.
+   Copyright (C) 1999-2000, 2006-2007 Greg J. Badros
+   */
+
+/* Define this if you want to build the finite domain solver */
+#cmakedefine CL_BUILD_FD_SOLVER
+
+/* Define this if you have the GTL, graph template library, installed you need
+   that for the FD solver */
+#define CL_HAVE_GTL 1
+
+/* Do not permit use of deprecated functions */
+#cmakedefine CL_NO_DEPRECATED
+
+/* Do not use any input/output functionality (for embedded systems) */
+#cmakedefine CL_NO_IO
+
+/* The divisor for the hash function -- this machine's word size may be a
+   reasonable value, or just use 1 */
+#cmakedefine CL_PTR_HASH_DIVISOR
+
+/* Check solver data structures' integrity at run time. Performance penalty,
+   but greater peace of mind */
+#cmakedefine CL_SOLVER_CHECK_INTEGRITY
+
+/* Output some solver statistics to STDERR while executing */
+#cmakedefine CL_SOLVER_STATS
+
+/* Output verbose trace messages to STDERR while executing */
+#cmakedefine CL_TRACE
+
+/* Use GNU STL library's hash_map, hash_set for the data structures instead of
+   the standard sorted dictionary implementations */
+#cmakedefine CL_USE_HASH_MAP_AND_SET
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#cmakedefine HAVE_DLFCN_H
+
+/* Define to 1 if you have the <inttypes.h> header file. */
+#cmakedefine HAVE_INTTYPES_H
+
+/* Define to 1 if you have the <memory.h> header file. */
+#cmakedefine HAVE_MEMORY_H
+
+/* Define this if your libguile has scm_make_smob_type_mfpe, the new-style
+   SMOB interface (>= guile-1.3.2 */
+#cmakedefine HAVE_SCM_MAKE_SMOB_TYPE_MFPE
+
+/* Define to 1 if you have the <stdint.h> header file. */
+#cmakedefine HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdlib.h> header file. */
+#cmakedefine HAVE_STDLIB_H
+
+/* Define to 1 if you have the <strings.h> header file. */
+#cmakedefine HAVE_STRINGS_H
+
+/* Define to 1 if you have the <string.h> header file. */
+#cmakedefine HAVE_STRING_H
+
+/* Define to 1 if you have the <sys/stat.h> header file. */
+#cmakedefine HAVE_SYS_STAT_H
+
+/* Define to 1 if you have the <sys/types.h> header file. */
+#cmakedefine HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <unistd.h> header file. */
+#cmakedefine HAVE_UNISTD_H
+
+/* Does cc/gcc take -fpermissive? */
+#cmakedefine NO_CC_PERMISSIVE
+
+/* Define to 1 if you have the ANSI C header files. */
+#define STDC_HEADERS 1
+
+/* Defined by automake */
+#cmakedefine VERSION @CASSOWARY_VERSION@
+
+/* Define to 1 if `lex' declares `yytext' as a `char *' by default, not a
+   `char[]'. */
+#cmakedefine YYTEXT_POINTER
