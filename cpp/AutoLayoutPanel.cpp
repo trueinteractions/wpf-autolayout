@@ -21,7 +21,7 @@ void MarshalString ( String ^ s, string& os ) {
    Marshal::FreeHGlobal(IntPtr((void*)chars));
 }
 
-namespace AutoLayoutPanel
+namespace AutoLayout
 {
     ref struct Constraint
     {
