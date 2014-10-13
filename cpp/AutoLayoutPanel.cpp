@@ -13,12 +13,12 @@ using namespace System;
 using namespace System::Windows;
 using namespace System::Collections;
 
-void MarshalString ( String ^ s, string& os ) {
-   using namespace Runtime::InteropServices;
-   const char* chars = 
-      (const char*)(Marshal::StringToHGlobalAnsi(s)).ToPointer();
-   os = chars;
-   Marshal::FreeHGlobal(IntPtr((void*)chars));
+static std::string cnvclrstring( System::String ^ s )
+{
+    const char* cstr = (const char*) (System::Runtime::InteropServices::Marshal::StringToHGlobalAnsi(s)).ToPointer();
+    std::string sstr = cstr;
+    System::Runtime::InteropServices::Marshal::FreeHGlobal(System::IntPtr((void*)cstr));
+    return sstr;
 }
 
 namespace AutoLayout
@@ -38,33 +38,38 @@ namespace AutoLayout
     {
     public:
         AutoLayoutPanel() : Panel() {
-            this->Controls = gcnew Hashtable();
             Constraints = gcnew ArrayList();
-            ControlVariables = new std::map<std::string, ClVariable *>();
+            ControlVariables = gcnew Hashtable();
             solver = new ClSimplexSolver();
-            //VarConstraints = gcnew Hashtable();
-            VarConstraints = new std::map<std::string, ClLinearEquation *>();
+            VarConstraints = gcnew Hashtable();
 
             // Register ourselves.
             FindClControlByUIElement(this);
 
             // Force our X/Y to be 0, 0
             ClVariable* cv1 = FindClVariableByUIElementAndProperty(this, "X");
-            ClLinearEquation* cl1 = new ClLinearEquation(*cv1, ClGenericLinearExpression<double>(0.0));
+            ClLinearEquation* cl1 = new ClLinearEquation(*cv1, ClGenericLinearExpression<double>(0.0), ClsRequired());
             solver->AddConstraint(*cl1);
 
             ClVariable* cv3 = FindClVariableByUIElementAndProperty(this, "Y");
-            ClLinearEquation* cl2 = new ClLinearEquation(*cv3, ClGenericLinearExpression<double>(0.0));
+            ClLinearEquation* cl2 = new ClLinearEquation(*cv3, ClGenericLinearExpression<double>(0.0), ClsRequired());
             solver->AddConstraint(*cl2);
         }
 
         String^ GetId(UIElement^ cntl)
         {
-            return (String^)this->Controls[cntl];
+            // This needs to run to ensure the element has been added to the
+            // autolayout process, even if it wasn't explicitly by the user.
+            FindClControlByUIElement(cntl);
+
+            return cntl->Uid;
         }
         
         void AddNewControl(UIElement^ cntl)
         {
+            ClVariable* pWidth = FindClVariableByUIElementAndProperty(this, "Width");
+            ClVariable* pHeight = FindClVariableByUIElementAndProperty(this, "Height");
+
             ClVariable* clX = FindClVariableByUIElementAndProperty(cntl, "X");
             ClVariable* clY = FindClVariableByUIElementAndProperty(cntl, "Y");
             ClVariable* clWidth = FindClVariableByUIElementAndProperty(cntl, "Width");
@@ -79,6 +84,9 @@ namespace AutoLayout
             // X = Left
             ClLinearEquation *cl1 = new ClLinearEquation(*clX, ClGenericLinearExpression<double>(*clLeft), ClsRequired());
             solver->AddConstraint(cl1);
+            // Add a preference to keep X above 0.
+            ClLinearInequality* cl1a = new ClLinearInequality(*clX, cnGEQ, 0.0, ClsMedium());
+            solver->AddConstraint(*cl1a);
 
             // X = Center - (Width/2)
             ClGenericLinearExpression<double> cle3 = (ClGenericLinearExpression<double>(*clWidth)).Divide(2);
@@ -86,31 +94,36 @@ namespace AutoLayout
             ClLinearEquation *cl2 = new ClLinearEquation(*clX, cle2, ClsRequired());
             solver->AddConstraint(*cl2);
 
-            // X = Right - Width
-            ClGenericLinearExpression<double> cle4 = (ClGenericLinearExpression<double>(*clRight)).Minus(*clWidth);
+            // X = pWidth - Width - Right
+            ClGenericLinearExpression<double> cle4 = (ClGenericLinearExpression<double>(*pWidth)).Minus(*clWidth).Minus(*clRight);
             ClLinearEquation *cl3 = new ClLinearEquation(*clX, cle4, ClsRequired());
             solver->AddConstraint(*cl3);
+            // Add a preference to keep Right above 0.
+            ClLinearInequality* cl3a = new ClLinearInequality(*clRight, cnGEQ, 0.0, ClsMedium());
+            solver->AddConstraint(*cl3a);
 
             // Y = Top
             ClLinearEquation *cl4 = new ClLinearEquation(*clY, ClGenericLinearExpression<double>(*clTop), ClsRequired());
             solver->AddConstraint(*cl4);
+            // Add a preference to keep Y above 0.
+            ClLinearInequality* cl4a = new ClLinearInequality(*clY, cnGEQ, 0.0, ClsMedium());
+            solver->AddConstraint(*cl4a);
 
             // Y = Middle - (Height/2)
             ClGenericLinearExpression<double> cle5 = ClGenericLinearExpression<double>(*clMiddle).Minus(ClGenericLinearExpression<double>(*clHeight).Divide(2));
             ClLinearEquation *cl5 = new ClLinearEquation(*clY, cle5, ClsRequired());
             solver->AddConstraint(*cl5);
 
-            // Y = Bottom - Height
-            ClGenericLinearExpression<double> cle6 = ClGenericLinearExpression<double>(*clBottom).Minus(*clHeight);
+            // Y = pHeight - Height - Bottom
+            ClGenericLinearExpression<double> cle6 = ClGenericLinearExpression<double>(*pHeight).Minus(*clHeight).Minus(*clBottom);
             ClLinearEquation *cl6 = new ClLinearEquation(*clY, cle6, ClsRequired());
             solver->AddConstraint(*cl6);
         }
 
         UIElement^ FindClControlByUIElement(UIElement^ em)
         {
-            if (!Controls->ContainsKey(em))
-            {
-                this->Controls->Add(em, (Guid::NewGuid()).ToString());
+            if(em->Uid == "") {
+                em->Uid = (Guid::NewGuid()).ToString();
                 AddNewControl(em);
             }
             return em;
@@ -119,17 +132,9 @@ namespace AutoLayout
         ClVariable* FindClVariableByUIElementAndProperty(UIElement^ em, String^ property)
         {
             String^ key = GetId(em) + "_" + property;
-            std::string _key;
-            MarshalString(key, _key);
-            if(ControlVariables->find(_key) == ControlVariables->end()) {
-                ControlVariables->insert(std::pair<std::string, ClVariable *>(_key,new ClVariable(_key)));
-            //if (!ControlVariables->ContainsKey(key)) {
-                //System::Runtime::InteropServices::GCHandle h = System::Runtime::InteropServices::GCHandle::FromIntPtr(IntPtr(new ClVariable(_key)));
-                //ControlVariables->Add(key, h.Target);
-            }
-            return (ClVariable *)ControlVariables->at(_key);
-            //return (ClVariable *)(System::Runtime::InteropServices::GCHandle::ToIntPtr(
-            //    System::Runtime::InteropServices::GCHandle::Alloc(ControlVariables[key])).ToPointer());
+            if (!ControlVariables->ContainsKey(key))
+                ControlVariables->Add(key, gcnew IntPtr(new ClVariable(cnvclrstring(key))));
+            return (ClVariable *)((IntPtr ^)ControlVariables[key])->ToPointer();
         }
 
         int AddLayoutConstraint(UIElement^ controlFirst, 
@@ -183,75 +188,70 @@ namespace AutoLayout
         {
             Constraint^ c = (Constraint^)Constraints[ndx];
             solver->RemoveConstraint(c->constraint);
-            //TODO: Determine if target controls need to be in Controls, ControlVariables, VarContraints
+            //TODO: Determine if target controls need to still in ControlVariables, VarContraints
+            //TODO: Clean up C++ ClVariable/ClLinearEquation memory?
             Constraints->RemoveAt(ndx);
         }
 
-        void SetValue(ClVariable* v, double x, ClStrength s)
+        void SetPropValue(UIElement^ em, String ^property, ClVariable* v, double x, ClStrength s)
         {
+            String^ key = GetId(em) + "_" + property;
+
             // TODO: Find a better way then manually adding/removing constriants.
-            //if (VarConstraints->ContainsKey(v->Name))
-            if(VarConstraints->find(v->Name()) == VarConstraints->end())
+            if(VarConstraints->ContainsKey(key))
             {
-                ClLinearEquation* eq = (ClLinearEquation *)VarConstraints->at(v->Name());
+                ClLinearEquation* eq = (ClLinearEquation *)((IntPtr ^)VarConstraints[key])->ToPointer();
                 solver->RemoveConstraint(eq);
-                VarConstraints->erase(v->Name());
+                VarConstraints->Remove(key);
             }
             ClLinearEquation* eq2 = new ClLinearEquation(*v, ClGenericLinearExpression<double>(x), s);
             solver->AddConstraint(eq2);
-            VarConstraints->insert(std::pair<std::string, ClLinearEquation*>(v->Name(), eq2));
+            VarConstraints->Add(key, gcnew IntPtr(eq2));
         }
 
         virtual Size MeasureOverride(Size availableSize) override
         {
-            IEnumerator^ e = InternalChildren->GetEnumerator();
-            do
+            for each (UIElement^ child in InternalChildren)
             {
-                UIElement^ child = (UIElement ^)e->Current;
                 if (!child->IsMeasureValid)
                     child->Measure(availableSize);
-            } while (e->MoveNext());
+            }
             return availableSize;
         }
 
         virtual Size ArrangeOverride(Size finalSize) override
         {
-            SetValue(FindClVariableByUIElementAndProperty(this, "Width"), 
+            SetPropValue(this, "Width", FindClVariableByUIElementAndProperty(this, "Width"), 
                 finalSize.Width, ClsRequired());
-            SetValue(FindClVariableByUIElementAndProperty(this, "Height"), 
+            SetPropValue(this, "Height", FindClVariableByUIElementAndProperty(this, "Height"), 
                 finalSize.Height, ClsRequired());
 
-            IEnumerator^ e = InternalChildren->GetEnumerator();
-            do
+            for each(UIElement^ child in InternalChildren)
             {
-                UIElement^ child = (UIElement ^)e->Current;
-                SetValue(FindClVariableByUIElementAndProperty(child, "Width"), 
-                    child->DesiredSize.Width, ClsStrong());
-                SetValue(FindClVariableByUIElementAndProperty(child, "Height"),
-                    child->DesiredSize.Height, ClsStrong());
-            } while (e->MoveNext());
+                SetPropValue(child, "Width",FindClVariableByUIElementAndProperty(child, "Width"), 
+                    child->DesiredSize.Width, ClsMedium());
+                SetPropValue(child, "Height",FindClVariableByUIElementAndProperty(child, "Height"),
+                    child->DesiredSize.Height, ClsMedium());
+            }
 
-            solver->Resolve();
+            solver->Solve();
 
-            e = InternalChildren->GetEnumerator();
-            do
-            {
-                UIElement^ child = (UIElement ^)e->Current;
+            for each(UIElement^ child in InternalChildren) {
                 String^ Id = GetId(child);
-                std::string _id;
-                MarshalString(Id, _id);
-                child->Arrange(Rect(Point(((ClVariable *)ControlVariables->at(_id + "_X"))->Value(),
-                                    ((ClVariable *)ControlVariables->at(_id + "_Y"))->Value()),
-                                Size(((ClVariable *)ControlVariables->at(_id + "_Width"))->Value(),
-                                    ((ClVariable *)ControlVariables->at(_id + "_Height"))->Value())));
-            } while (e->MoveNext());
+
+                double x = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_X"])->ToPointer())->Value();
+                double y = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Y"])->ToPointer())->Value();
+                double w = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Width"])->ToPointer())->Value();
+                double h = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Height"])->ToPointer())->Value();
+
+                child->Arrange(Rect(Point(x, y),  Size(w, h)));
+            }
             return finalSize;
         }
     private:
-        std::map <std::string, ClLinearEquation *> *VarConstraints;
-        std::map <std::string, ClVariable *> *ControlVariables;
+        Hashtable^ VarConstraints;
+        Hashtable^ ControlVariables;
         ArrayList^ Constraints;
-        Hashtable^ Controls;
         ClSimplexSolver* solver;
     };
 }
