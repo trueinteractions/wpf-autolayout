@@ -213,8 +213,13 @@ namespace AutoLayout
         {
             for each (UIElement^ child in InternalChildren)
             {
-                if (!child->IsMeasureValid)
+                if (!child->IsMeasureValid) {
                     child->Measure(availableSize);
+                    SetPropValue(child, "Width",FindClVariableByUIElementAndProperty(child, "Width"), 
+                        child->DesiredSize.Width, ClsMedium());
+                    SetPropValue(child, "Height",FindClVariableByUIElementAndProperty(child, "Height"),
+                        child->DesiredSize.Height, ClsMedium());
+                }
             }
             return availableSize;
         }
@@ -228,10 +233,6 @@ namespace AutoLayout
 
             for each(UIElement^ child in InternalChildren)
             {
-                SetPropValue(child, "Width",FindClVariableByUIElementAndProperty(child, "Width"), 
-                    child->DesiredSize.Width, ClsMedium());
-                SetPropValue(child, "Height",FindClVariableByUIElementAndProperty(child, "Height"),
-                    child->DesiredSize.Height, ClsMedium());
             }
 
             solver->Solve();
