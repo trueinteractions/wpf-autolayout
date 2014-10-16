@@ -23,7 +23,7 @@ static std::string cnvclrstring( System::String ^ s )
 
 namespace AutoLayout
 {
-    ref struct Constraint
+    public ref struct Constraint
     {
         ClConstraint* constraint;
         ClVariable* propertyFirstVariable;
@@ -137,7 +137,7 @@ namespace AutoLayout
             return (ClVariable *)((IntPtr ^)ControlVariables[key])->ToPointer();
         }
 
-        int AddLayoutConstraint(UIElement^ controlFirst, 
+        Constraint^ AddLayoutConstraint(UIElement^ controlFirst, 
             String^ propertyFirst,
             String^ relatedBy, 
             UIElement^ controlSecond, 
@@ -150,7 +150,7 @@ namespace AutoLayout
             target->controlFirst = FindClControlByUIElement(controlFirst);
             target->propertyFirstVariable = FindClVariableByUIElementAndProperty(controlFirst, propertyFirst);
 
-            int ndx = Constraints->Count;
+            //int ndx = Constraints->Count;
             ClCnRelation equality = (relatedBy->Equals("<") ? cnLEQ : relatedBy->Equals(">") ? cnGEQ : cnEQ);
 
             if (controlSecond == nullptr) {
@@ -181,16 +181,18 @@ namespace AutoLayout
                 }
             }
             solver->AddConstraint(*(target->constraint));
-            return Constraints->Add(target);
+            this->InvalidateMeasure();
+            this->InvalidateArrange();
+            this->UpdateLayout();
+            return target;
         }
 
-        void RemoveLayoutConstraint(int ndx)
+        void RemoveLayoutConstraint(Constraint^ c)
         {
-            Constraint^ c = (Constraint^)Constraints[ndx];
-            solver->RemoveConstraint(c->constraint);
-            //TODO: Determine if target controls need to still in ControlVariables, VarContraints
-            //TODO: Clean up C++ ClVariable/ClLinearEquation memory?
-            Constraints->RemoveAt(ndx);
+            solver->RemoveConstraint(*(c->constraint));
+            this->InvalidateMeasure();
+            this->InvalidateArrange();
+            this->UpdateLayout();
         }
 
         void SetPropValue(UIElement^ em, String ^property, ClVariable* v, double x, ClStrength s)
