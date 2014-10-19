@@ -67,9 +67,6 @@ namespace AutoLayout
         
         void AddNewControl(UIElement^ cntl)
         {
-            ClVariable* pWidth = FindClVariableByUIElementAndProperty(this, "Width");
-            ClVariable* pHeight = FindClVariableByUIElementAndProperty(this, "Height");
-
             ClVariable* clX = FindClVariableByUIElementAndProperty(cntl, "X");
             ClVariable* clY = FindClVariableByUIElementAndProperty(cntl, "Y");
             ClVariable* clWidth = FindClVariableByUIElementAndProperty(cntl, "Width");
@@ -97,8 +94,8 @@ namespace AutoLayout
             ClLinearEquation *cl2 = new ClLinearEquation(*clX, cle2, ClsRequired());
             solver->AddConstraint(*cl2);
 
-            // X = pWidth - Width - Right
-            ClGenericLinearExpression<double> cle4 = (ClGenericLinearExpression<double>(*pWidth)).Minus(*clWidth).Minus(*clRight);
+            // X = Right - Width
+            ClGenericLinearExpression<double> cle4 = (ClGenericLinearExpression<double>(*clRight)).Minus(*clWidth);
             ClLinearEquation *cl3 = new ClLinearEquation(*clX, cle4, ClsRequired());
             solver->AddConstraint(*cl3);
             // Add a preference to keep Right above 0.
@@ -120,8 +117,8 @@ namespace AutoLayout
             ClLinearEquation *cl5 = new ClLinearEquation(*clY, cle5, ClsRequired());
             solver->AddConstraint(*cl5);
 
-            // Y = pHeight - Height - Bottom
-            ClGenericLinearExpression<double> cle6 = ClGenericLinearExpression<double>(*pHeight).Minus(*clHeight).Minus(*clBottom);
+            // Y = Bottom - Height
+            ClGenericLinearExpression<double> cle6 = ClGenericLinearExpression<double>(*clBottom).Minus(*clHeight);
             ClLinearEquation *cl6 = new ClLinearEquation(*clY, cle6, ClsRequired());
             solver->AddConstraint(*cl6);
         }
