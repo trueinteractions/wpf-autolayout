@@ -87,6 +87,9 @@ namespace AutoLayout
             // Add a preference to keep X above 0.
             ClLinearInequality* cl1a = new ClLinearInequality(*clX, cnGEQ, 0.0, ClsMedium());
             solver->AddConstraint(*cl1a);
+            // default to upper left hand corner if nothing else is specified.
+            ClLinearEquation* cl2a = new ClLinearEquation(*clX, ClGenericLinearExpression<double>(0.0), ClsWeak());
+            solver->AddConstraint(*cl2a);
 
             // X = Center - (Width/2)
             ClGenericLinearExpression<double> cle3 = (ClGenericLinearExpression<double>(*clWidth)).Divide(2);
@@ -108,6 +111,9 @@ namespace AutoLayout
             // Add a preference to keep Y above 0.
             ClLinearInequality* cl4a = new ClLinearInequality(*clY, cnGEQ, 0.0, ClsMedium());
             solver->AddConstraint(*cl4a);
+            // default to upper left hand corner if nothing else is specified.
+            ClLinearEquation* cl4b = new ClLinearEquation(*clY, ClGenericLinearExpression<double>(0.0), ClsWeak());
+            solver->AddConstraint(*cl4b);
 
             // Y = Middle - (Height/2)
             ClGenericLinearExpression<double> cle5 = ClGenericLinearExpression<double>(*clMiddle).Minus(ClGenericLinearExpression<double>(*clHeight).Divide(2));
