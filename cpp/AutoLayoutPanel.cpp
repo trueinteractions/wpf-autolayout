@@ -238,6 +238,12 @@ namespace AutoLayout
 
             for each(UIElement^ child in InternalChildren)
             {
+                if (!child->IsMeasureValid) {
+                    SetPropValue(child, "Width",FindClVariableByUIElementAndProperty(child, "Width"), 
+                        child->DesiredSize.Width, ClsMedium());
+                    SetPropValue(child, "Height",FindClVariableByUIElementAndProperty(child, "Height"),
+                        child->DesiredSize.Height, ClsMedium());
+                }
             }
 
             solver->Solve();
