@@ -153,7 +153,6 @@ namespace AutoLayout
             target->controlFirst = FindClControlByUIElement(controlFirst);
             target->propertyFirstVariable = FindClVariableByUIElementAndProperty(controlFirst, propertyFirst);
 
-            //int ndx = Constraints->Count;
             ClCnRelation equality = (relatedBy->Equals("<") ? cnLEQ : relatedBy->Equals(">") ? cnGEQ : cnEQ);
 
             if (controlSecond == nullptr) {
@@ -245,7 +244,6 @@ namespace AutoLayout
                         child->DesiredSize.Height, ClsMedium());
                 }
             }
-
             solver->Solve();
 
             for each(UIElement^ child in InternalChildren) {
@@ -255,7 +253,6 @@ namespace AutoLayout
                 double y = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Y"])->ToPointer())->Value();
                 double w = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Width"])->ToPointer())->Value();
                 double h = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Height"])->ToPointer())->Value();
-
                 child->Arrange(Rect(Point(x, y),  Size(w, h)));
             }
             return finalSize;
