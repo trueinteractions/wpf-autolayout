@@ -94,9 +94,9 @@ namespace AutoLayout
             ClLinearEquation *cl2 = new ClLinearEquation(*clX, cle2, ClsRequired());
             solver->AddConstraint(*cl2);
 
-            // X = Right - Width
+            // Left = Right - Width
             ClGenericLinearExpression<double> cle4 = (ClGenericLinearExpression<double>(*clRight)).Minus(*clWidth);
-            ClLinearEquation *cl3 = new ClLinearEquation(*clX, cle4, ClsRequired());
+            ClLinearEquation *cl3 = new ClLinearEquation(*clLeft, cle4, ClsRequired());
             solver->AddConstraint(*cl3);
             // Add a preference to keep Right above 0.
             ClLinearInequality* cl3a = new ClLinearInequality(*clRight, cnGEQ, 0.0, ClsMedium());
@@ -113,13 +113,14 @@ namespace AutoLayout
             solver->AddConstraint(*cl4b);
 
             // Y = Middle - (Height/2)
-            ClGenericLinearExpression<double> cle5 = ClGenericLinearExpression<double>(*clMiddle).Minus(ClGenericLinearExpression<double>(*clHeight).Divide(2));
+            ClGenericLinearExpression<double> cle5 = ClGenericLinearExpression<double>(*clMiddle)
+                .Minus(ClGenericLinearExpression<double>(*clHeight).Divide(2));
             ClLinearEquation *cl5 = new ClLinearEquation(*clY, cle5, ClsRequired());
             solver->AddConstraint(*cl5);
 
             // Y = Bottom - Height
             ClGenericLinearExpression<double> cle6 = ClGenericLinearExpression<double>(*clBottom).Minus(*clHeight);
-            ClLinearEquation *cl6 = new ClLinearEquation(*clY, cle6, ClsRequired());
+            ClLinearEquation *cl6 = new ClLinearEquation(*clTop, cle6, ClsRequired());
             solver->AddConstraint(*cl6);
         }
 
@@ -248,13 +249,19 @@ namespace AutoLayout
 
             for each(UIElement^ child in InternalChildren) {
                 String^ Id = GetId(child);
-
                 double x = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_X"])->ToPointer())->Value();
                 double y = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Y"])->ToPointer())->Value();
                 double w = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Width"])->ToPointer())->Value();
                 double h = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Height"])->ToPointer())->Value();
                 child->Arrange(Rect(Point(x, y),  Size(w, h)));
             }
+            
+            String^ Id = GetId(this);
+            double Left = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Left"])->ToPointer())->Value();
+            double Right = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Right"])->ToPointer())->Value();
+            double Top = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Top"])->ToPointer())->Value();
+            double Bottom = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Bottom"])->ToPointer())->Value();
+            
             return finalSize;
         }
     private:
