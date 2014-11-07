@@ -7,6 +7,7 @@
 #using <WPF/PresentationFramework.dll>
 
 #include "include/Cl.h"
+// #define PRINT_DEBUG 1
 
 using namespace std;
 using namespace System;
@@ -149,6 +150,9 @@ namespace AutoLayout
             double multiplier, 
             double constant) 
         {
+#ifdef PRINT_DEBUG
+            System::Console::WriteLine(this->Uid+": ["+controlFirst+"]."+propertyFirst+" "+relatedBy+" ["+controlSecond+"]."+propertySecond+" * "+multiplier+" + "+constant);
+#endif
             Constraint^ target = gcnew Constraint();
             target->propertyFirst = propertyFirst;
             target->controlFirst = FindClControlByUIElement(controlFirst);
@@ -200,45 +204,48 @@ namespace AutoLayout
 
         void SetPropValue(UIElement^ em, String ^property, ClVariable* v, double x, ClStrength s)
         {
+            if(x == System::Double::PositiveInfinity) return;
+
             String^ key = GetId(em) + "_" + property;
 
-            // TODO: Find a better way then manually adding/removing constriants.
             if(VarConstraints->ContainsKey(key))
             {
                 ClLinearEquation* eq = (ClLinearEquation *)((IntPtr ^)VarConstraints[key])->ToPointer();
+                if(x == eq->Expression().Constant()) return;
+#ifdef PRINT_DEBUG
+                System::Console::WriteLine(this->Uid+": ["+em+"]."+property+" changing from "+eq->Expression().Constant()+" to "+x);
+#endif
                 solver->RemoveConstraint(eq);
-                VarConstraints->Remove(key);
+                eq->ChangeConstant(x);
+                solver->AddConstraint(eq);
+            } else {
+#ifdef PRINT_DEBUG
+                System::Console::WriteLine(this->Uid+": ["+em+"]."+property+" setting to "+x);
+#endif
+
+                ClLinearEquation* eq2 = new ClLinearEquation(*v, ClGenericLinearExpression<double>(x), s);
+                solver->AddConstraint(eq2);
+                VarConstraints->Add(key, gcnew IntPtr(eq2));
             }
-            ClLinearEquation* eq2 = new ClLinearEquation(*v, ClGenericLinearExpression<double>(x), s);
-            solver->AddConstraint(eq2);
-            VarConstraints->Add(key, gcnew IntPtr(eq2));
         }
 
-        virtual Size MeasureOverride(Size availableSize) override
-        {
-            for each (UIElement^ child in InternalChildren)
-            {
-                if (!child->IsMeasureValid) {
-                    child->Measure(availableSize);
-                    SetPropValue(child, "Width",FindClVariableByUIElementAndProperty(child, "Width"), 
-                        child->DesiredSize.Width, ClsMedium());
-                    SetPropValue(child, "Height",FindClVariableByUIElementAndProperty(child, "Height"),
-                        child->DesiredSize.Height, ClsMedium());
-                }
-            }
-            return availableSize;
-        }
-
-        virtual Size ArrangeOverride(Size finalSize) override
-        {
+        Size LayoutPass(Size finalSize, bool measure, bool arrange) {
             SetPropValue(this, "Width", FindClVariableByUIElementAndProperty(this, "Width"), 
                 finalSize.Width, ClsRequired());
             SetPropValue(this, "Height", FindClVariableByUIElementAndProperty(this, "Height"), 
                 finalSize.Height, ClsRequired());
 
+            double maxY = finalSize.Height == System::Double::PositiveInfinity ? 0.0 : finalSize.Height;
+            double maxX = finalSize.Width == System::Double::PositiveInfinity ? 0.0 : finalSize.Width;
+
             for each(UIElement^ child in InternalChildren)
             {
                 if (!child->IsMeasureValid) {
+                    if(measure)
+                        child->Measure(finalSize);
+#ifdef PRINT_DEBUG
+                    System::Console::WriteLine(this->Uid+": ["+child+"]->DesiredSize = "+child->DesiredSize.Width+", "+child->DesiredSize.Height);
+#endif
                     SetPropValue(child, "Width",FindClVariableByUIElementAndProperty(child, "Width"), 
                         child->DesiredSize.Width, ClsMedium());
                     SetPropValue(child, "Height",FindClVariableByUIElementAndProperty(child, "Height"),
@@ -253,20 +260,58 @@ namespace AutoLayout
                 double y = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Y"])->ToPointer())->Value();
                 double w = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Width"])->ToPointer())->Value();
                 double h = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Height"])->ToPointer())->Value();
-                if(child->GetType()->GetProperty("Width") != nullptr) {
-                    ((System::Windows::FrameworkElement ^)child)->Width = w;
-                    ((System::Windows::FrameworkElement ^)child)->Height = h;
+
+                if(arrange) {
+                    if(child->GetType()->GetProperty("Width") != nullptr) {
+                        ((System::Windows::FrameworkElement ^)child)->Width = w;
+                        ((System::Windows::FrameworkElement ^)child)->Height = h;
+                    }
+#ifdef PRINT_DEBUG
+                    System::Console::WriteLine(this->Uid+": ["+child+"]->Arrange("+x+","+y+","+w+","+h+")");
+#endif
+                    child->Arrange(Rect(Point(x, y),  Size(w, h)));
                 }
-                child->Arrange(Rect(Point(x, y),  Size(w, h)));
+                maxX = maxX < (x+w) ? (x+w) : maxX;
+                maxY = maxY < (y+h) ? (y+h) : maxY;
             }
-            
-            String^ Id = GetId(this);
-            double Left = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Left"])->ToPointer())->Value();
-            double Right = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Right"])->ToPointer())->Value();
-            double Top = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Top"])->ToPointer())->Value();
-            double Bottom = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Bottom"])->ToPointer())->Value();
-            
-            return finalSize;
+            return Size(maxX, maxY);
+        }
+
+        virtual Size MeasureOverride(Size availableSize) override
+        {
+            Size calcSize = availableSize;
+            if(calcSize.Width == System::Double::PositiveInfinity ||
+                calcSize.Height == System::Double::PositiveInfinity ) 
+            {
+#ifdef PRINT_DEBUG
+                System::Console::WriteLine(this->Uid+" ---- positive infinity found, going into layout pass ----");
+#endif
+                calcSize = LayoutPass(availableSize, true, false);
+            } else {
+                for each (UIElement^ child in InternalChildren)
+                {
+                    if (!child->IsMeasureValid) {
+                        child->Measure(availableSize);
+                        SetPropValue(child, "Width",FindClVariableByUIElementAndProperty(child, "Width"), 
+                            child->DesiredSize.Width, ClsMedium());
+                        SetPropValue(child, "Height",FindClVariableByUIElementAndProperty(child, "Height"),
+                            child->DesiredSize.Height, ClsMedium());
+                    }
+                }
+            }
+#ifdef PRINT_DEBUG
+            System::Console::WriteLine(this->Uid+": Measure("+availableSize+") -> ("+calcSize+")");
+#endif
+            return calcSize;
+        }
+
+        virtual Size ArrangeOverride(Size finalSize) override
+        {
+            Size setSize = LayoutPass(finalSize, false, true);
+#ifdef PRINT_DEBUG
+            System::Console::WriteLine(this->Uid+": Arrange("+finalSize+") -> ("+setSize+")");
+#endif
+            return setSize;
         }
     private:
         Hashtable^ VarConstraints;
