@@ -237,42 +237,43 @@ namespace AutoLayout
 
             double maxY = finalSize.Height == System::Double::PositiveInfinity ? 0.0 : finalSize.Height;
             double maxX = finalSize.Width == System::Double::PositiveInfinity ? 0.0 : finalSize.Width;
-
-            for each(UIElement^ child in InternalChildren)
-            {
-                if (!child->IsMeasureValid) {
-                    if(measure)
-                        child->Measure(finalSize);
+            if(InternalChildren->Count > 0) {
+                for each(UIElement^ child in InternalChildren)
+                {
+                    if (!child->IsMeasureValid) {
+                        if(measure)
+                            child->Measure(finalSize);
 #ifdef PRINT_DEBUG
-                    System::Console::WriteLine(this->Uid+": ["+child+"]->DesiredSize = "+child->DesiredSize.Width+", "+child->DesiredSize.Height);
+                        System::Console::WriteLine(this->Uid+": ["+child+"]->DesiredSize = "+child->DesiredSize.Width+", "+child->DesiredSize.Height);
 #endif
-                    SetPropValue(child, "Width",FindClVariableByUIElementAndProperty(child, "Width"), 
-                        child->DesiredSize.Width, ClsMedium());
-                    SetPropValue(child, "Height",FindClVariableByUIElementAndProperty(child, "Height"),
-                        child->DesiredSize.Height, ClsMedium());
-                }
-            }
-            solver->Solve();
-
-            for each(UIElement^ child in InternalChildren) {
-                String^ Id = GetId(child);
-                double x = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_X"])->ToPointer())->Value();
-                double y = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Y"])->ToPointer())->Value();
-                double w = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Width"])->ToPointer())->Value();
-                double h = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Height"])->ToPointer())->Value();
-
-                if(arrange) {
-                    if(child->GetType()->GetProperty("Width") != nullptr) {
-                        ((System::Windows::FrameworkElement ^)child)->Width = w;
-                        ((System::Windows::FrameworkElement ^)child)->Height = h;
+                        SetPropValue(child, "Width",FindClVariableByUIElementAndProperty(child, "Width"), 
+                            child->DesiredSize.Width, ClsMedium());
+                        SetPropValue(child, "Height",FindClVariableByUIElementAndProperty(child, "Height"),
+                            child->DesiredSize.Height, ClsMedium());
                     }
-#ifdef PRINT_DEBUG
-                    System::Console::WriteLine(this->Uid+": ["+child+"]->Arrange("+x+","+y+","+w+","+h+")");
-#endif
-                    child->Arrange(Rect(Point(x, y),  Size(w, h)));
                 }
-                maxX = maxX < (x+w) ? (x+w) : maxX;
-                maxY = maxY < (y+h) ? (y+h) : maxY;
+                solver->Solve();
+
+                for each(UIElement^ child in InternalChildren) {
+                    String^ Id = GetId(child);
+                    double x = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_X"])->ToPointer())->Value();
+                    double y = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Y"])->ToPointer())->Value();
+                    double w = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Width"])->ToPointer())->Value();
+                    double h = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Height"])->ToPointer())->Value();
+
+                    if(arrange) {
+                        if(child->GetType()->GetProperty("Width") != nullptr) {
+                            ((System::Windows::FrameworkElement ^)child)->Width = w;
+                            ((System::Windows::FrameworkElement ^)child)->Height = h;
+                        }
+#ifdef PRINT_DEBUG
+                        System::Console::WriteLine(this->Uid+": ["+child+"]->Arrange("+x+","+y+","+w+","+h+")");
+#endif
+                        child->Arrange(Rect(Point(x, y),  Size(w, h)));
+                    }
+                    maxX = maxX < (x+w) ? (x+w) : maxX;
+                    maxY = maxY < (y+h) ? (y+h) : maxY;
+                }
             }
             return Size(maxX, maxY);
         }
