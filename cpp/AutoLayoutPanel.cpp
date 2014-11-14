@@ -43,6 +43,7 @@ namespace AutoLayout
             ControlVariables = gcnew Hashtable();
             solver = new ClSimplexSolver();
             VarConstraints = gcnew Hashtable();
+            Controls = gcnew Hashtable();
 
             // Register ourselves.
             FindClControlByUIElement(this);
@@ -68,6 +69,9 @@ namespace AutoLayout
         
         void AddNewControl(UIElement^ cntl)
         {
+#ifdef PRINT_DEBUG
+            Console::WriteLine("Adding new control to "+this->Uid+" as "+cntl->Uid+"//"+cntl);
+#endif
             ClVariable* clX = FindClVariableByUIElementAndProperty(cntl, "X");
             ClVariable* clY = FindClVariableByUIElementAndProperty(cntl, "Y");
             ClVariable* clWidth = FindClVariableByUIElementAndProperty(cntl, "Width");
@@ -127,8 +131,9 @@ namespace AutoLayout
 
         UIElement^ FindClControlByUIElement(UIElement^ em)
         {
-            if(em->Uid == "") {
-                em->Uid = (Guid::NewGuid()).ToString();
+            if(!Controls->ContainsKey(em->Uid)) {
+                if(em->Uid == "") em->Uid = (Guid::NewGuid()).ToString();
+                Controls->Add(em->Uid,em);
                 AddNewControl(em);
             }
             return em;
@@ -213,14 +218,14 @@ namespace AutoLayout
                 ClLinearEquation* eq = (ClLinearEquation *)((IntPtr ^)VarConstraints[key])->ToPointer();
                 if(x == eq->Expression().Constant()) return;
 #ifdef PRINT_DEBUG
-                System::Console::WriteLine(this->Uid+": ["+em+"]."+property+" changing from "+eq->Expression().Constant()+" to "+x);
+                System::Console::WriteLine(this->Uid+": ["+em->Uid+"//"+em+"]."+property+" changing from "+eq->Expression().Constant()+" to "+x);
 #endif
                 solver->RemoveConstraint(eq);
                 eq->ChangeConstant(x);
                 solver->AddConstraint(eq);
             } else {
 #ifdef PRINT_DEBUG
-                System::Console::WriteLine(this->Uid+": ["+em+"]."+property+" setting to "+x);
+                System::Console::WriteLine(this->Uid+": ["+em->Uid+"//"+em+"]."+property+" setting to "+x);
 #endif
 
                 ClLinearEquation* eq2 = new ClLinearEquation(*v, ClGenericLinearExpression<double>(x), s);
@@ -244,7 +249,7 @@ namespace AutoLayout
                         if(measure)
                             child->Measure(finalSize);
 #ifdef PRINT_DEBUG
-                        System::Console::WriteLine(this->Uid+": ["+child+"]->DesiredSize = "+child->DesiredSize.Width+", "+child->DesiredSize.Height);
+                        System::Console::WriteLine(this->Uid+": ["+child->Uid+"//"+child+"]->DesiredSize = "+child->DesiredSize.Width+", "+child->DesiredSize.Height);
 #endif
                         SetPropValue(child, "Width",FindClVariableByUIElementAndProperty(child, "Width"), 
                             child->DesiredSize.Width, ClsMedium());
@@ -315,6 +320,7 @@ namespace AutoLayout
             return setSize;
         }
     private:
+        Hashtable^ Controls;
         Hashtable^ VarConstraints;
         Hashtable^ ControlVariables;
         ArrayList^ Constraints;
