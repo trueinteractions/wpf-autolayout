@@ -266,6 +266,9 @@ namespace AutoLayout
                     double w = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Width"])->ToPointer())->Value();
                     double h = ((ClVariable *)((IntPtr ^)ControlVariables[Id + "_Height"])->ToPointer())->Value();
 
+                    if(w < 0) w = 0;
+                    if(h < 0) h = 0;
+
                     if(arrange) {
                         if(child->GetType()->GetProperty("Width") != nullptr) {
                             ((System::Windows::FrameworkElement ^)child)->Width = w;
