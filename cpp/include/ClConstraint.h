@@ -48,6 +48,8 @@ StrCnRelation(ClCnRelation rel) {
   case cnGT: return ">";
   default: assert(false);
   }
+  // cannot get here, but added to suppress warnings.
+  return "=";
 }
 
 
