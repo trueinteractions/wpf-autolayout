@@ -33,6 +33,8 @@ namespace AutoLayout
         String^ propertySecond;
         UIElement^ controlFirst;
         UIElement^ controlSecond;
+        double multiplier;
+        double constant;
     };
 
     public ref class AutoLayoutPanel : System::Windows::Controls::Panel
@@ -162,6 +164,8 @@ namespace AutoLayout
             target->propertyFirst = propertyFirst;
             target->controlFirst = FindClControlByUIElement(controlFirst);
             target->propertyFirstVariable = FindClVariableByUIElementAndProperty(controlFirst, propertyFirst);
+            target->multiplier = multiplier;
+            target->constant = constant;
 
             ClCnRelation equality = (relatedBy->Equals("<") ? cnLEQ : relatedBy->Equals(">") ? cnGEQ : cnEQ);
 
@@ -205,6 +209,60 @@ namespace AutoLayout
             this->InvalidateMeasure();
             this->InvalidateArrange();
             this->UpdateLayout();
+        }
+
+        ref class ConstantAnimator {
+        public:
+            ConstantAnimator(AutoLayoutPanel^ panel_, Constraint^ constraint_, double from_, double to_, double duration_) {
+                this->panel = panel_;
+                this->constraint = constraint_;
+                this->from = from_;
+                this->to = to_;
+                this->duration = duration_;
+                this->passed = gcnew System::Diagnostics::Stopwatch();
+                this->passed->Start();
+            }
+            void Render(Object^ sender, EventArgs^ e) {
+                double diff = ((double)this->passed->ElapsedMilliseconds)/(this->duration);
+                if(diff >= 1) {
+                    this->passed->Stop();
+                    panel->ChangeConstant(this->constraint, this->to);
+                    System::Windows::Media::CompositionTarget::Rendering -= this->selfRef;
+                } else {
+                    double target = ((this->to - this->from) * diff ) + this->from;
+                    panel->ChangeConstant(this->constraint, target);
+                }
+            }
+            EventHandler ^selfRef;
+        private:
+            AutoLayoutPanel^ panel;
+            Constraint^ constraint;
+            double to;
+            double from;
+            double duration;
+            System::Diagnostics::Stopwatch^ passed;
+        };
+
+        void AnimateConstant(Constraint^ constraint, double x) {
+            ConstantAnimator^ an = gcnew ConstantAnimator(this, constraint, constraint->constant, x, 300);
+            an->selfRef = gcnew EventHandler(an, &ConstantAnimator::Render);
+            System::Windows::Media::CompositionTarget::Rendering += an->selfRef;
+        }
+
+        void ChangeConstant(Constraint^ constraint, double x) {
+            if(x == System::Double::PositiveInfinity) return;
+            ClLinearEquation* eq = (ClLinearEquation *)constraint->constraint;
+            if(x == eq->Expression().Constant()) return;
+#ifdef PRINT_DEBUG
+            System::Console::WriteLine(this->Uid+": ["+em->Uid+"//"+em+"]."+property+" changing from "+eq->Expression().Constant()+" to "+x);
+#endif
+            solver->RemoveConstraint(eq);
+            eq->ChangeConstant(x);
+            constraint->constant = x;
+            solver->AddConstraint(eq);
+            this->InvalidateMeasure();
+            this->InvalidateArrange();
+            //this->UpdateLayout();
         }
 
         void SetPropValue(UIElement^ em, String ^property, ClVariable* v, double x, ClStrength s)
